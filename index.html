@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolokium Prep — Hazfi Setiyawan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,500&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #F4F1EA;
+            --fg: #1B3A2D;
+            --accent: #C8963E;
+            --accent-light: #E8D4A8;
+            --green-deep: #1B3A2D;
+            --green-mid: #2D6B4F;
+            --green-light: #4A9B72;
+            --card-bg: #FFFEF9;
+            --border: rgba(27, 58, 45, 0.12);
+            --shadow: rgba(27, 58, 45, 0.08);
+            --danger: #C0392B;
+            --tag-mahasiswa: #2D6B4F;
+            --tag-moderator: #C8963E;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--fg);
+            font-family: 'Source Sans 3', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- Grain overlay --- */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* --- Header --- */
+        .header {
+            text-align: center;
+            padding: 2.5rem 1.5rem 1rem;
+            position: relative;
+        }
+
+        .header-badge {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: rgba(200, 150, 62, 0.1);
+            border: 1px solid rgba(200, 150, 62, 0.25);
+            border-radius: 100px;
+            padding: 0.35rem 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.2rem);
+            font-weight: 900;
+            color: var(--green-deep);
+            line-height: 1.15;
+            margin-bottom: 0.5rem;
+        }
+
+        .header h1 em {
+            color: var(--accent);
+            font-style: italic;
+        }
+
+        .header p {
+            font-size: 0.95rem;
+            color: rgba(27, 58, 45, 0.55);
+            max-width: 520px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* --- Filter Bar --- */
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 1.3rem;
+            border: 1.5px solid var(--border);
+            border-radius: 100px;
+            background: transparent;
+            color: var(--fg);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--green-mid);
+            background: rgba(45, 107, 79, 0.05);
+        }
+
+        .filter-btn.active {
+            background: var(--green-deep);
+            color: var(--bg);
+            border-color: var(--green-deep);
+        }
+
+        /* --- Main Stage --- */
+        .stage {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 1rem 1.5rem 2rem;
+        }
+
+        /* --- Reel Window --- */
+        .reel-container {
+            position: relative;
+            width: 100%;
+            height: 280px;
+            overflow: hidden;
+            border-radius: 20px;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border);
+            box-shadow: 0 8px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.8);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+        }
+
+        .reel-strip {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            top: 0;
+            will-change: transform;
+        }
+
+        .reel-item {
+            width: 100%;
+            height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            line-height: 1.4;
+            color: var(--fg);
+            padding: 1rem 2.5rem;
+            user-select: none;
+        }
+
+        .reel-center-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 140px;
+            border-top: 1px solid rgba(27, 58, 45, 0.06);
+            border-bottom: 1px solid rgba(27, 58, 45, 0.06);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .reel-strip.settled .reel-item {
+            opacity: 0.2;
+            transform: scale(0.92);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .reel-strip.settled .reel-item.landed {
+            opacity: 1;
+            transform: scale(1.05);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+        }
+
+        /* --- Question Tag --- */
+        .q-tag {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            margin-bottom: 0.4rem;
+            color: white;
+        }
+
+        .q-tag.mahasiswa { background: var(--tag-mahasiswa); }
+        .q-tag.moderator { background: var(--tag-moderator); }
+
+        /* --- Spin Button --- */
+        .spin-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .spin-btn {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 0.85rem 2.8rem;
+            border: none;
+            border-radius: 100px;
+            background: linear-gradient(135deg, var(--green-mid), var(--green-deep));
+            color: var(--bg);
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(27, 58, 45, 0.25);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spin-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1));
+            pointer-events: none;
+        }
+
+        .spin-btn:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 30px rgba(27, 58, 45, 0.35);
+        }
+
+        .spin-btn:active { transform: scale(0.97); }
+        .spin-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .reveal-btn {
+            font-family: 'Source Sans 3', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.85rem 2rem;
+            border: 2px solid var(--green-deep);
+            border-radius: 100px;
+            background: transparent;
+            color: var(--green-deep);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .reveal-btn.visible {
+            opacity: 1;
+            pointer-events: auto;
+            animation: fadeUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .reveal-btn:hover {
+            background: var(--green-deep);
+            color: var(--bg);
+        }
+
+        /* --- Answer Card --- */
+        .answer-card {
+            margin-top: 1.5rem;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px var(--shadow);
+            display: none;
+        }
+
+        .answer-card.visible {
+            display: block;
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .answer-card-header {
+            background: var(--green-deep);
+            color: var(--bg);
+            padding: 1rem 1.5rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.5;
+        }
+
+        .answer-card-body {
+            padding: 1.5rem;
+        }
+
+        .answer-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.5rem;
+        }
+
+        .answer-text {
+            font-size: 0.92rem;
+            line-height: 1.75;
+            color: rgba(27, 58, 45, 0.82);
+            margin-bottom: 1.2rem;
+        }
+
+        .answer-tip {
+            background: rgba(200, 150, 62, 0.08);
+            border-left: 3px solid var(--accent);
+            padding: 0.8rem 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(27, 58, 45, 0.7);
+        }
+
+        .answer-tip strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* --- Risk Map --- */
+        .risk-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px var(--shadow);
+        }
+
+        .risk-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--green-deep);
+        }
+
+        .risk-item {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .risk-item:last-child { border-bottom: none; }
+
+        .risk-area {
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        .risk-question {
+            color: rgba(27, 58, 45, 0.6);
+        }
+
+        .risk-strategy {
+            color: var(--green-mid);
+            font-weight: 600;
+        }
+
+        /* --- Stats Bar --- */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--green-deep);
+        }
+
+        .stat-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: rgba(27, 58, 45, 0.4);
+            margin-top: 0.15rem;
+        }
+
+        /* --- Progress dots --- */
+        .progress-bar {
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .progress-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-dot.seen {
+            background: var(--green-light);
+        }
+
+        .progress-dot.current {
+            background: var(--accent);
+            transform: scale(1.4);
+            box-shadow: 0 0 0 3px rgba(200, 150, 62, 0.2);
+        }
+
+        .progress-dot:hover::after {
+            content: attr(data-q);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--green-deep);
+            color: var(--bg);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            text-align: center;
+            padding: 2rem 1.5rem 3rem;
+            font-size: 0.75rem;
+            color: rgba(27, 58, 45, 0.3);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+
+        /* --- Responsive --- */
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.8rem; }
+            .reel-item { font-size: 1rem; padding: 1rem 1.5rem; height: 120px; }
+            .reel-container { height: 240px; }
+            .reel-center-line { height: 120px; }
+            .risk-item { grid-template-columns: 1fr; gap: 0.25rem; }
+            .stats-bar { gap: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header fade-in">
+    <div class="header-badge">Sekolah Pascasarjana · IPB University</div>
+    <h1>Kolokium <em>Prep</em></h1>
+    <p>Uji pemahaman Anda terhadap pertanyaan kolokium.<br>Spin untuk mendapatkan pertanyaan acak, lalu coba jawab sebelum membuka panduan.</p>
+</div>
+
+<div class="filter-bar fade-in">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Semua (17)</button>
+    <button class="filter-btn" data-filter="mahasiswa" onclick="setFilter('mahasiswa')">Mahasiswa (13)</button>
+    <button class="filter-btn" data-filter="moderator" onclick="setFilter('moderator')">Moderator (4)</button>
+    <button class="filter-btn" data-filter="prioritas" onclick="setFilter('prioritas')">⚡ Prioritas</button>
+</div>
+
+<div class="stage fade-in">
+    <div class="reel-container" id="reelContainer">
+        <div class="reel-strip" id="reelStrip"></div>
+        <div class="reel-center-line"></div>
+    </div>
+
+    <div class="spin-row">
+        <button class="spin-btn" id="spinBtn" onclick="spin()">Spin!</button>
+        <button class="reveal-btn" id="revealBtn" onclick="revealAnswer()">Lihat Jawaban →</button>
+    </div>
+
+    <div class="answer-card" id="answerCard">
+        <div class="answer-card-header" id="answerHeader"></div>
+        <div class="answer-card-body" id="answerBody"></div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-number" id="statSeen">0</div>
+            <div class="stat-label">Sudah Dilatih</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number" id="statTotal">17</div>
+            <div class="stat-label">Total Soal</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number" id="statProgress">0%</div>
+            <div class="stat-label">Progress</div>
+        </div>
+    </div>
+
+    <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<div class="footer">
+    Model Kinetika Penurunan HU · Edible Coating Kitosan-Asam Stearat · 2026
+</div>
+
+<script>
+const questions = [
+    {
+        id: "Q1", type: "mahasiswa", blok: "Justifikasi Metodologis", priority: false,
+        q: "Mengapa penelitian ini hanya menggunakan satu suhu penyimpanan (32°C)? Apakah model kinetika bisa memprediksi umur simpan pada suhu lain?",
+        a: "Suhu 32°C dipilih sebagai representasi kondisi dataran rendah tropis Indonesia (Karyono 2015). Penelitian ini secara sadar membatasi diri pada kondisi isotermal tunggal karena tujuan utamanya adalah menghasilkan nilai k yang valid dan reproducible pada satu kondisi referensi terlebih dahulu. Untuk prediksi multi-suhu, pendekatan Arrhenius membutuhkan minimal dua titik suhu berbeda — ini merupakan arah penelitian lanjutan.",
+        tip: "Jika ditanya lanjutan: sebutkan bahwa nilai Ea (energi aktivasi) bisa dihitung pada penelitian berikutnya dengan menambahkan suhu 25°C dan 38°C sebagai perbandingan tiga titik isotermal."
+    },
+    {
+        id: "Q2", type: "mahasiswa", blok: "Justifikasi Metodologis", priority: false,
+        q: "Kondisi penyimpanan di inkubator sangat berbeda dengan kondisi distribusi nyata di lapang. Seberapa jauh hasil penelitian ini bisa digeneralisasi?",
+        a: "Kontrol kondisi (suhu dan RH konstan) justru merupakan prasyarat ilmiah yang tidak bisa dinegosiasikan dalam analisis kinetika (Labuza 1982). Tanpa kontrol ketat, nilai k yang dihasilkan tidak bisa dibandingkan antar perlakuan maupun antar studi. Penelitian ini tidak mengklaim memodelkan kondisi distribusi lapang secara langsung, melainkan menghasilkan parameter kinetika referensi (k dan t½) pada kondisi terdefinisi. Generalisasi ke kondisi lapang dilakukan pada tahap aplikasi melalui model Arrhenius.",
+        tip: "Framing penting: inkubator bukan 'keterbatasan', melainkan instrumen ilmiah standar untuk kinetika pangan. Sampaikan ini dengan percaya diri."
+    },
+    {
+        id: "Q3", type: "mahasiswa", blok: "Justifikasi Metodologis", priority: false,
+        q: "Interval pengamatan 7 hari cukup panjang. Apakah cukup untuk menangkap dinamika awal penurunan mutu, terutama pH albumen?",
+        a: "Interval 7 hari dipilih berdasarkan preseden studi kinetika telur (Keener et al. 2006, Jin et al. 2011). Penurunan HU bersifat gradual dan interval ini sudah memadai untuk fitting model orde nol dan orde satu. Perubahan pH albumen memang bisa lebih cepat di awal, namun parameter utama yang dimodelkan secara kinetika adalah HU, bukan pH. pH diukur sebagai parameter pendukung. Ke depan, pengambilan data pada hari ke-3 bisa ditambahkan.",
+        tip: null
+    },
+    {
+        id: "Q4", type: "mahasiswa", blok: "Justifikasi Metodologis", priority: false,
+        q: "Penggunaan dry cleaning untuk telur — apakah kondisi permukaan kerabang sudah terstandarisasi? Apakah tidak ada pre-treatment sanitasi?",
+        a: "Dry cleaning dipilih untuk menghindari pelonggaran kutikula alami kerabang telur akibat air (Lelieveld et al. 2003). Homogenitas sampel dijaga melalui: (1) telur dari satu flock dan periode panen yang sama, (2) seleksi bobot seragam (55-65 g), dan (3) pengukuran TPC hari ke-0 sebagai baseline. Apabila TPC hari ke-0 menunjukkan variasi antar perlakuan yang tidak signifikan, maka asumsi keseragaman awal terpenuhi.",
+        tip: null
+    },
+    {
+        id: "Q5", type: "mahasiswa", blok: "Teknis Analisis Kinetika", priority: false,
+        q: "Apakah tidak perlu uji tambahan seperti AIC atau uji lack-of-fit selain R² dan RMSE untuk pemilihan model?",
+        a: "AIC sangat relevan saat membandingkan model dengan jumlah parameter berbeda karena memberikan penalti untuk kompleksitas. Namun, orde nol vs orde satu memiliki jumlah parameter yang setara (dua parameter: k dan A₀), sehingga R² dan RMSE sudah memadai. Uji lack-of-fit lebih relevan bila tersedia replikasi pada setiap titik waktu. Penambahan AIC tetap bisa dilakukan sebagai kriteria komplementer.",
+        tip: "Jika diminta: AIC = n·ln(SSE/n) + 2k. Model dengan AIC lebih kecil lebih baik. Siapkan perhitungan manual untuk data pilot."
+    },
+    {
+        id: "Q6", type: "mahasiswa", blok: "Teknis Analisis Kinetika", priority: false,
+        q: "Linearisasi model orde satu mengasumsikan error berdistribusi normal pada skala logaritmik. Apakah validasi asumsi ini dilakukan?",
+        a: "Linearisasi melalui transformasi ln memang mentransformasi distribusi error. Idealnya, uji normalitas residual (Shapiro-Wilk atau Kolmogorov-Smirnov) dilakukan pada residual ln-transformed. Dalam studi kinetika pangan (Van Boekel 2009), nonlinear regression justru lebih direkomendasikan. Penelitian ini menggunakan linearisasi sebagai pendekatan praktis yang umum, namun penguatan dengan nonlinear regression menjadi nilai tambah signifikan.",
+        tip: null
+    },
+    {
+        id: "Q7", type: "mahasiswa", blok: "Teknis Analisis Kinetika", priority: false,
+        q: "Batas kritis HU 60 mengacu pada USDA. Mengapa tidak menggunakan SNI 3926:2023 mengingat konteks penelitian Indonesia?",
+        a: "SNI 3926:2023 tidak menetapkan nilai batas HU secara spesifik — standar SNI lebih berfokus pada kerabang, kuning telur, dan kondisi fisik. Batas HU 60 mengacu pada klasifikasi USDA (batas Grade A/B) yang sudah diadopsi secara luas dalam literatur ilmiah internasional dan merupakan referensi standar dalam studi kinetika telur global. Ini bukan mengabaikan standar nasional, melainkan karena HU 60 adalah nilai yang paling banyak divalidasi.",
+        tip: "Pertanyaan ini bisa menjadi jebakan. Pastikan sudah cek isi SNI 3926:2023 dan bisa jelaskan mengapa standar internasional lebih operasional untuk analisis kinetika."
+    },
+    {
+        id: "Q8", type: "mahasiswa", blok: "Teknis Analisis Kinetika", priority: true,
+        q: "TPC bisa mencapai batas tidak aman lebih awal dari HU pada 32°C. Mengapa umur simpan tidak ditentukan berdasarkan parameter pembatas yang pertama kali kritis?",
+        a: "Ini merupakan keterbatasan yang perlu diakui secara terbuka. Idealnya, umur simpan ditetapkan berdasarkan 'critical limiting factor' (Labuza & Schmidl 1985). Pada 32°C, TPC memang berpotensi menjadi limiting factor. Penelitian ini memfokuskan pada HU karena HU adalah indikator kualitas fungsional yang bisa dimodelkan secara kontinu dengan persamaan matematis yang mapan. TPC diukur sebagai parameter keamanan pendukung. Nilai umur simpan berdasarkan HU perlu dikontekstualisasikan dengan data TPC.",
+        tip: "Ini pertanyaan PRIORITAS TERTINGGI. Jawaban harus mengakui keterbatasan sekaligus menjelaskan pilihan secara ilmiah."
+    },
+    {
+        id: "Q9", type: "mahasiswa", blok: "Bahan dan Formulasi", priority: false,
+        q: "Apakah stabilitas emulsi kitosan-asam stearat dikarakterisasi? Bagaimana memastikan emulsi konsisten antar batch?",
+        a: "Konsistensi emulsi dijaga melalui: (1) rasio bahan tepat dan terukur, (2) suhu homogenisasi konstan (75°C), (3) waktu homogenisasi seragam, dan (4) emulsi segar pada setiap sesi aplikasi. Karakterisasi formal seperti particle size analysis atau indeks stabilitas tidak termasuk dalam ruang lingkup, namun konsistensi dijaga melalui protokol preparasi yang identik. Karakterisasi emulsi yang lebih mendalam adalah saran yang valid.",
+        tip: null
+    },
+    {
+        id: "Q10", type: "mahasiswa", blok: "Bahan dan Formulasi", priority: false,
+        q: "Tween 80 bersifat hidrofilik. Apakah penambahannya tidak justru menurunkan sifat barrier uap air dari coating?",
+        a: "Memang benar Tween 80 bersifat hidrofilik (HLB 15) dan secara teoritis dapat meningkatkan permeabilitas uap air. Namun perannya sebagai emulsifier — tanpa Tween 80, asam stearat tidak terdispersi merata dan membentuk agregat yang justru tidak efektif. Efektivitas barrier bergantung pada distribusi merata dalam film, bukan hanya kehadiran komponen. Ini adalah trade-off yang diakui dalam literatur (Morillon et al. 2002): emulsifier minimal diperlukan untuk film homogen.",
+        tip: null
+    },
+    {
+        id: "Q11", type: "mahasiswa", blok: "Bahan dan Formulasi", priority: false,
+        q: "DD kitosan >75% — apakah nilai DD spesifik perlu ditentukan lebih presisi karena bisa mempengaruhi konstanta k?",
+        a: "DD memang mempengaruhi sifat fungsional kitosan — semakin tinggi DD, semakin kuat muatan positif gugus amina sehingga interaksi antimikroba dan film-forming lebih baik. Kitosan komersial DD >75% merupakan standar umum dalam penelitian edible coating (Devlieghere et al. 2004). Untuk meningkatkan reproducibility, karakterisasi DD lebih spesifik (80-85% via FTIR atau titrasi potensiometri) disarankan untuk penelitian lanjutan.",
+        tip: null
+    },
+    {
+        id: "Q12", type: "mahasiswa", blok: "Rancangan Percobaan", priority: false,
+        q: "Apakah n=3 ulangan cukup untuk analisis kinetika? Derajat bebas regresi akan terbatas.",
+        a: "n=3 adalah standar minimal yang diterima dalam kinetika pangan (Jin et al. 2011, Keener et al. 2006). Kekuatan statistik tidak hanya dari n ulangan biologis, tetapi juga jumlah titik waktu (t=0, 7, 14, 21, 28, 35 hari = 6 titik). Kombinasi 3 ulangan × 6 titik waktu menghasilkan data memadai untuk fitting model. Peningkatan ke n=4-5 akan memperkuat power, namun n=3 sudah dapat dipertanggungjawabkan.",
+        tip: null
+    },
+    {
+        id: "Q13", type: "mahasiswa", blok: "Rancangan Percobaan", priority: false,
+        q: "Apakah unit percobaan adalah satu butir telur atau satu kelompok? Bagaimana mengatasi potensi efek batch?",
+        a: "Unit percobaan adalah satu kelompok telur per perlakuan per ulangan. Tiga butir per perlakuan per ulangan merupakan subsampling untuk destruktif sampling. Variasi batch diatasi melalui: (1) telur dari satu flock (Lohmann Brown umur 50-60 minggu), (2) pemanenan dalam rentang waktu sempit (2-3 hari), dan (3) randomisasi penempatan unit percobaan di dalam inkubator.",
+        tip: null
+    },
+    {
+        id: "M1", type: "moderator", blok: "Moderator", priority: true,
+        q: "Nasution (2024) sudah membuktikan efektivitas kitosan-stearin. Apa yang membedakan kontribusi ilmiah penelitian ini?",
+        a: "Kontribusi penelitian ini bukan sekadar substitusi bahan, melainkan pergeseran paradigma dari studi efektivitas ke studi mekanistik-kuantitatif. Nasution (2024) menjawab 'apakah coating ini efektif?' — penelitian ini menjawab 'berapa lama efektivitas itu berlangsung dan mengikuti pola kinetika apa?' Penggunaan asam stearat murni (IV terdefinisi) memungkinkan model kinetika yang reproducible. Kontribusi utama: (1) model kinetika kuantitatif dengan parameter k terukur, (2) basis formulasi terstandarisasi, dan (3) estimasi umur simpan berbasis matematis untuk industri.",
+        tip: "Ini kemungkinan pertanyaan TERBERAT. Latih jawaban ini sampai bisa disampaikan dalam 60-90 detik tanpa membaca catatan."
+    },
+    {
+        id: "M2", type: "moderator", blok: "Moderator", priority: false,
+        q: "Judul menyebutkan 'Model Kinetika Penurunan HU', tapi parameter yang diukur banyak. Apakah model juga dibangun untuk parameter lain?",
+        a: "Model kinetika secara primer dibangun untuk HU sebagai parameter mutu kunci. Parameter lain (susut bobot, IKT, pH, TPC) diukur sebagai: (1) parameter mutu pendukung untuk profil kualitas komprehensif, (2) indikator keamanan pangan (TPC) untuk kontekstualisasi umur simpan, dan (3) data komparatif yang memperkuat diskusi mekanisme coating. Fokus modeling ada pada HU; parameter lain dianalisis secara deskriptif-komparatif. Judul sudah mencerminkan fokus utama ini.",
+        tip: null
+    },
+    {
+        id: "M3", type: "moderator", blok: "Moderator", priority: false,
+        q: "Penelitian menggunakan strain Lohmann Brown umur 50-60 minggu. Seberapa jauh hasilnya bisa digeneralisasi untuk strain atau umur lain?",
+        a: "Lohmann Brown dipilih karena merupakan strain komersial dominan di Indonesia. Umur 50-60 minggu (fase pasca-puncak produksi) relevan secara aplikatif karena peternak umumnya mempertahankan flock hingga afkir. Nilai k yang dihasilkan bersifat spesifik untuk kombinasi strain-umur-kondisi ini. Generalisasi memerlukan studi komparasi dengan strain lain (Isa Brown, ayam kampung) dan umur berbeda sebagai penelitian lanjutan.",
+        tip: null
+    },
+    {
+        id: "M4", type: "moderator", blok: "Moderator", priority: false,
+        q: "Apakah ada pertimbangan untuk mengeksplorasi model yang lebih kompleks seperti Weibull atau model dua-fase?",
+        a: "Model Weibull menawarkan fleksibilitas lebih untuk pola non-linear (fase lag, perlambatan akhir). Pertimbangan tidak menggunakan: (1) tujuan praktis — model sederhana dengan parameter interpretable (k dalam HU/hari atau 1/hari) lebih mudah diaplikasikan industri; (2) parsimoni — dengan n=3, model kompleks berisiko overfitting; (3) kebaruan diutamakan pada intervensi coating, bukan model matematika. Weibull menjadi perluasan menarik jika data menunjukkan pola yang tak dijelaskan orde nol/satu.",
+        tip: null
+    }
+];
+
+// --- State ---
+let activeFilter = 'all';
+let filteredQuestions = [...questions];
+let seenSet = new Set();
+let currentQuestion = null;
+let isSpinning = false;
+let lastIndex = -1;
+
+// --- Audio ---
+let audioCtx = null;
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTick(progress) {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1600 - progress * 800, now);
+    gain.gain.setValueAtTime(0.06, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(now); osc.stop(now + 0.05);
+}
+
+function playLand() {
+    ensureAudio();
+    const now = audioCtx.currentTime;
+    [660, 990, 1320].forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.06);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.1 - i * 0.025, now + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now); osc.stop(now + 0.55);
+    });
+}
+
+// --- Filter ---
+function setFilter(filter) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === filter);
+    });
+
+    if (filter === 'all') filteredQuestions = [...questions];
+    else if (filter === 'prioritas') filteredQuestions = questions.filter(q => q.priority);
+    else filteredQuestions = questions.filter(q => q.type === filter);
+
+    document.getElementById('statTotal').textContent = filteredQuestions.length;
+    lastIndex = -1;
+    currentQuestion = null;
+    hideAnswer();
+    document.getElementById('revealBtn').classList.remove('visible');
+    reinitReel();
+    updateProgress();
+}
+
+// --- Reel ---
+function getItemH() { return window.innerWidth <= 600 ? 120 : 140; }
+
+function shuffleArray(arr) {
+    const s = arr.slice();
+    for (let i = s.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [s[i], s[j]] = [s[j], s[i]];
+    }
+    return s;
+}
+
+function reinitReel() {
+    const strip = document.getElementById('reelStrip');
+    const container = document.getElementById('reelContainer');
+    const H = getItemH();
+    const windowH = container.offsetHeight;
+
+    const initial = shuffleArray(filteredQuestions).slice(0, 3);
+    strip.innerHTML = '';
+    strip.classList.remove('settled');
+
+    initial.forEach(q => {
+        const div = document.createElement('div');
+        div.className = 'reel-item';
+        div.style.height = H + 'px';
+        div.innerHTML = `<div><span class="q-tag ${q.type}">${q.id} · ${q.type}</span><br>${truncate(q.q, 80)}</div>`;
+        strip.appendChild(div);
+    });
+
+    const mid = 1;
+    strip.style.transform = `translateY(${-(mid * H + H/2 - windowH/2)}px)`;
+    strip.classList.add('settled');
+    if (strip.children[mid]) strip.children[mid].classList.add('landed');
+}
+
+function truncate(text, maxLen) {
+    return text.length > maxLen ? text.substring(0, maxLen) + '…' : text;
+}
+
+function spin() {
+    if (isSpinning || filteredQuestions.length === 0) return;
+    isSpinning = true;
+    ensureAudio();
+    hideAnswer();
+    document.getElementById('revealBtn').classList.remove('visible');
+
+    const strip = document.getElementById('reelStrip');
+    const container = document.getElementById('reelContainer');
+    const spinBtn = document.getElementById('spinBtn');
+    spinBtn.disabled = true;
+
+    const H = getItemH();
+    const windowH = container.offsetHeight;
+    const INITIAL_VEL = 35;
+    const FRICTION = 0.985;
+    const STOP_THRESH = 1.5;
+
+    // Simulate distance
+    let simV = INITIAL_VEL, simD = 0;
+    while (simV >= STOP_THRESH) { simD += simV; simV *= FRICTION; }
+
+    const centerAtStop = simD + windowH / 2;
+    const naturalIdx = Math.round((centerAtStop - H/2) / H);
+    const LANDING = naturalIdx + 1;
+    const COUNT = LANDING + 3;
+
+    // Pick question
+    let idx;
+    do { idx = Math.floor(Math.random() * filteredQuestions.length); } while (idx === lastIndex && filteredQuestions.length > 1);
+    lastIndex = idx;
+    currentQuestion = filteredQuestions[idx];
+
+    // Build reel
+    let topics = [];
+    while (topics.length < COUNT) topics = topics.concat(shuffleArray(filteredQuestions));
+    topics = topics.slice(0, COUNT);
+    topics[LANDING] = currentQuestion;
+
+    const TARGET_Y = -(LANDING * H + H/2 - windowH/2);
+
+    strip.innerHTML = '';
+    strip.classList.remove('settled');
+    strip.style.transform = 'translateY(0px)';
+
+    topics.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.className = 'reel-item';
+        div.style.height = H + 'px';
+        div.innerHTML = `<div><span class="q-tag ${q.type}">${q.id} · ${q.type}</span><br>${truncate(q.q, 80)}</div>`;
+        if (i === LANDING) div.setAttribute('data-landing', 'true');
+        strip.appendChild(div);
+    });
+
+    let pos = 0, vel = INITIAL_VEL, lastBound = 0, lastFrame = null;
+
+    function animate(ts) {
+        if (!lastFrame) lastFrame = ts;
+        let dt = Math.min((ts - lastFrame) / 16.667, 3);
+        lastFrame = ts;
+        if (dt === 0) { requestAnimationFrame(animate); return; }
+
+        pos += vel * dt;
+        vel *= Math.pow(FRICTION, dt);
+        strip.style.transform = `translateY(${-pos}px)`;
+
+        // Style by position
+        const items = strip.children;
+        for (let i = 0; i < items.length; i++) {
+            const itemC = i * H + H/2 + (-pos);
+            const dist = Math.abs(itemC - windowH/2);
+            const norm = Math.min(dist / H, 1);
+            items[i].style.transform = `scale(${1.05 - norm * 0.15})`;
+            items[i].style.opacity = 1 - norm * 0.7;
+        }
+
+        const curBound = Math.floor(pos / H);
+        if (curBound > lastBound) {
+            playTick(Math.min(1 - vel/INITIAL_VEL, 0.95));
+            lastBound = curBound;
+        }
+
+        if (vel < STOP_THRESH) { snapTo(); return; }
+        requestAnimationFrame(animate);
+    }
+
+    function snapTo() {
+        const startY = -pos;
+        const dist = TARGET_Y - startY;
+        const startT = performance.now();
+
+        function spring(now) {
+            const t = Math.min((now - startT) / 650, 1);
+            const s = 1 - Math.exp(-7*t) * Math.cos(5*t);
+            const y = startY + dist * s;
+            strip.style.transform = `translateY(${y}px)`;
+
+            const items = strip.children;
+            for (let i = 0; i < items.length; i++) {
+                const ic = i*H + H/2 + y;
+                const d = Math.abs(ic - windowH/2);
+                const n = Math.min(d/H, 1);
+                items[i].style.transform = `scale(${1.05 - n*0.15})`;
+                items[i].style.opacity = 1 - n*0.7;
+            }
+
+            if (t < 1) requestAnimationFrame(spring);
+            else settle();
+        }
+        requestAnimationFrame(spring);
+    }
+
+    function settle() {
+        strip.style.transform = `translateY(${TARGET_Y}px)`;
+        strip.classList.add('settled');
+        const landing = strip.querySelector('[data-landing]');
+        if (landing) landing.classList.add('landed');
+
+        playLand();
+        spinBtn.disabled = false;
+        isSpinning = false;
+
+        seenSet.add(currentQuestion.id);
+        document.getElementById('revealBtn').classList.add('visible');
+        updateProgress();
+    }
+
+    requestAnimationFrame(animate);
+}
+
+function revealAnswer() {
+    if (!currentQuestion) return;
+
+    const card = document.getElementById('answerCard');
+    const header = document.getElementById('answerHeader');
+    const body = document.getElementById('answerBody');
+
+    header.innerHTML = `<span class="q-tag ${currentQuestion.type}" style="margin-bottom:0.5rem">${currentQuestion.id} · ${currentQuestion.blok}</span><br>${currentQuestion.q}`;
+
+    let html = `<div class="answer-label">Panduan Jawaban</div><div class="answer-text">${currentQuestion.a}</div>`;
+    if (currentQuestion.tip) {
+        html += `<div class="answer-tip"><strong>TIP:</strong> ${currentQuestion.tip}</div>`;
+    }
+    body.innerHTML = html;
+
+    card.classList.remove('visible');
+    void card.offsetWidth;
+    card.classList.add('visible');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function hideAnswer() {
+    document.getElementById('answerCard').classList.remove('visible');
+}
+
+function updateProgress() {
+    const seen = filteredQuestions.filter(q => seenSet.has(q.id)).length;
+    const total = filteredQuestions.length;
+    document.getElementById('statSeen').textContent = seen;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statProgress').textContent = total ? Math.round(seen/total*100) + '%' : '0%';
+
+    const bar = document.getElementById('progressBar');
+    bar.innerHTML = '';
+    filteredQuestions.forEach(q => {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot';
+        dot.setAttribute('data-q', q.id);
+        if (seenSet.has(q.id)) dot.classList.add('seen');
+        if (currentQuestion && q.id === currentQuestion.id) dot.classList.add('current');
+        bar.appendChild(dot);
+    });
+}
+
+// --- Init ---
+reinitReel();
+updateProgress();
+</script>
+</body>
+</html>
